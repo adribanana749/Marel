@@ -4,7 +4,8 @@ app.use(express.json());
 
 app.post('/marel', async (req, res) => {
   try {
-    const { playerName, question, systemPrompt } = req.body;
+    const playerName = req.body.playerName || 'Spieler';
+    const question = req.body.question || '';
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -16,19 +17,24 @@ app.post('/marel', async (req, res) => {
         model: 'llama3-8b-8192',
         max_tokens: 150,
         messages: [
-          { role: 'system', content: 'Du bist Marel, eine freundliche KI-Assistentin in Roblox. Antworte immer auf Deutsch, kurz und nett.' },
+          { role: 'system', content: 'Du bist Marel, eine freundliche KI in Roblox. Antworte kurz auf Deutsch.' },
           { role: 'user', content: 'Spieler ' + playerName + ' fragt: ' + question }
         ]
       })
     });
 
     const data = await response.json();
-    const text = data.choices[0].message.content;
-    res.json({ response: text });
+    console.log('Groq Antwort:', JSON.stringify(data));
+    
+    if (data.choices && data.choices[0]) {
+      res.json({ response: data.choices[0].message.content });
+    } else {
+      res.json({ response: 'Fehler: ' + JSON.stringify(data) });
+    }
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ response: 'Fehler: ' + err.message });
+    console.error('Fehler:', err);
+    res.status(500).json({ response: 'Server Fehler: ' + err.message });
   }
 });
 
